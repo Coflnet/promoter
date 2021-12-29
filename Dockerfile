@@ -16,4 +16,6 @@ FROM alpine:3.14
 
 COPY --from=builder /app/promoter /usr/local/bin/promoter
 
+RUN apk add git
+
 CMD promoter
