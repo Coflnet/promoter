@@ -110,8 +110,13 @@ func ModifyImageTagIfPossible(line string) string {
 }
 
 func IsPathPromoteable(path string) bool {
+	path = strings.ToLower(path)
+	path = strings.Replace(path, "-", "", -1)
+	comp := strings.ToLower(config.Filename) + ".yaml"
+	comp = strings.Replace(comp, "-", "", -1)
+
 	return strings.Contains(
-		strings.ToLower(path),
-		strings.ToLower(config.Filename)+".yaml",
+		path,
+		comp,
 	)
 }
