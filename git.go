@@ -38,12 +38,12 @@ func CloneRepository() error {
 
 func PushEnv() error {
 	if repository == nil {
-		log.Error().Msgf("the repository variable is nil")
+		log.Fatal().Msgf("the repository variable is nil")
 	}
 
 	worktree, err := repository.Worktree()
 	if err != nil {
-		log.Error().Err(err).Msgf("error when getting the worktree")
+		log.Fatal().Err(err).Msgf("error when getting the worktree")
 		return err
 	}
 
@@ -66,7 +66,7 @@ func PushEnv() error {
 	})
 
 	if err != nil {
-		log.Error().Err(err).Msgf("something went wrong when committing")
+		log.Fatal().Err(err).Msgf("something went wrong when committing")
 		return err
 	}
 
@@ -81,7 +81,7 @@ func PushEnv() error {
 	})
 
 	if err != nil {
-		log.Error().Err(err).Msgf("something went wrong when pushing")
+		log.Fatal().Err(err).Msgf("something went wrong when pushing")
 		return err
 	}
 
