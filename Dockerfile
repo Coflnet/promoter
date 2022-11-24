@@ -12,7 +12,7 @@ COPY . .
 RUN go build .
 
 
-FROM gcr.io/distroless/static:latest
+FROM alpine:3
 
 COPY --from=builder /app/promoter /usr/local/bin/promoter
 
