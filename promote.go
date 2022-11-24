@@ -93,6 +93,9 @@ func promoteHelmChart(path string) error {
     _, err = tmpFile.WriteString(newLine + "\n")
   }
 
+  // delete the old yaml fiel and replica it with the new one
+  SwitchTempFileWithRealFile(yamlFile)
+  
   return nil
 }
 
