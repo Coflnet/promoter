@@ -13,7 +13,24 @@ import (
 func Promote() error {
 	path := config.RepositoryFolder
 	var promoteablePaths []string
+
+  helmPromoted := false
+
 	err := filepath.Walk(path, func(path string, info os.FileInfo, _ error) error {
+
+    // already updated a helm chart
+    if helmPromoted {
+      return nil
+    }
+
+    // check if the current directory is a helm chart
+    if isHelmChart(path) && isCorrectHelmChart(path, config.Filename) {
+      log.Info().Msgf("found the promotable helm chart %s", path)
+      helmPromoted = true
+      return promoteHelmChart(path)
+    }
+
+    // check for old school update
 		if !IsPathPromoteable(path) {
 			return nil
 		}
@@ -25,6 +42,10 @@ func Promote() error {
 		return err
 	}
 
+  if helmPromoted {
+    return nil
+  }
+
 	if len(promoteablePaths) == 0 || len(promoteablePaths) > 1 {
 		if len(promoteablePaths) > 1 {
 			for i, p := range promoteablePaths {
@@ -35,6 +56,72 @@ func Promote() error {
 	}
 
 	return promoteFile(promoteablePaths[0])
+}
+
+func promoteHelmChart(path string) error {
+
+  // yaml file path
+  yamlFile := filepath.Dir(path) + "/values.yaml"
+
+  // search the tag line
+  file, err := os.Open(yamlFile)
+  if err != nil {
+    log.Error().Err(err).Msgf("could not open file %s", path)
+    return err
+  }
+
+	tmpFile, err := CreateTempFile(yamlFile)
+	if err != nil {
+		return err
+	}
+	defer tmpFile.Close()
+
+  scanner := bufio.NewScanner(file)
+  for scanner.Scan() {
+    line := scanner.Text()
+    if !strings.Contains(line, "tag:") {
+      _, err = tmpFile.WriteString(line + "\n")
+      continue
+    }
+
+    // add a random number to the tag
+    log.Info().Msgf("found the tag line %s", line)
+    log.Info().Msgf("use the new tag: %s", config.NewTag)
+
+    // replace the tag
+    newLine := "  tag: " + config.NewTag
+    _, err = tmpFile.WriteString(newLine + "\n")
+  }
+
+  return nil
+}
+
+func isHelmChart(path string) bool {
+  return filepath.Base(path) == "Chart.yaml"
+}
+
+func isCorrectHelmChart(path, project string) bool {
+
+  // read chart.yaml file
+  file, err := os.Open(path)
+  if err != nil {
+    log.Panic().Err(err).Msgf("could not open file %s", path)
+  }
+
+  scanner := bufio.NewScanner(file)
+  for scanner.Scan() {
+    line := scanner.Text()
+
+    if !strings.Contains(line, "name:") {
+      continue
+    }
+
+    name := strings.Trim(strings.Split(line, ":")[1], " ")
+
+    return name == project
+  }
+  
+  return false
 }
 
 func promoteFile(path string) error {

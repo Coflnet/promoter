@@ -9,8 +9,8 @@ func main() {
 
 	err := Promote()
 	if err != nil {
-		log.Fatal().Err(err).Msgf("there was problem when promoting, stop execution")
+		log.Panic().Err(err).Msgf("there was problem when promoting, stop execution")
 	}
 
-	PushEnv()
+  PushEnv()
 }

@@ -22,6 +22,15 @@ func CloneRepository() error {
 	auth := &http.BasicAuth{Username: username, Password: token}
 	config.RepositoryFolder = "k8s"
 
+  // check if the repository folder exists and delete it
+  if _, err := os.Stat(config.RepositoryFolder); !os.IsNotExist(err) {
+    log.Warn().Msgf("delete repository folder because it already exists")
+    err = os.RemoveAll(config.RepositoryFolder)
+    if err != nil {
+      log.Panic().Err(err).Msgf("could not delete repository folder")
+    }
+  }
+
 	repository, err = git.PlainClone(config.RepositoryFolder, false, &git.CloneOptions{
 		URL:      url,
 		Auth:     auth,
@@ -29,7 +38,7 @@ func CloneRepository() error {
 	})
 
 	if err != nil {
-		log.Fatal().Err(err).Msgf("can not clone the kube repository")
+		log.Panic().Err(err).Msgf("can not clone the kube repository")
 		return err
 	}
 
@@ -38,12 +47,12 @@ func CloneRepository() error {
 
 func PushEnv() error {
 	if repository == nil {
-		log.Fatal().Msgf("the repository variable is nil")
+		log.Panic().Msgf("the repository variable is nil")
 	}
 
 	worktree, err := repository.Worktree()
 	if err != nil {
-		log.Fatal().Err(err).Msgf("error when getting the worktree")
+		log.Panic().Err(err).Msgf("error when getting the worktree")
 		return err
 	}
 
@@ -66,7 +75,7 @@ func PushEnv() error {
 	})
 
 	if err != nil {
-		log.Fatal().Err(err).Msgf("something went wrong when committing")
+		log.Panic().Err(err).Msgf("something went wrong when committing")
 		return err
 	}
 
@@ -81,7 +90,7 @@ func PushEnv() error {
 	})
 
 	if err != nil {
-		log.Fatal().Err(err).Msgf("something went wrong when pushing")
+		log.Panic().Err(err).Msgf("something went wrong when pushing")
 		return err
 	}
 
