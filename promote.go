@@ -176,10 +176,13 @@ func CreateTempFile(path string) (*os.File, error) {
 }
 
 func SwitchTempFileWithRealFile(path string) error {
+  log.Info().Msgf("deleting file %s", path)
 	err := os.Remove(path)
 	if err != nil {
 		return err
 	}
+
+  log.Info().Msgf("renaming file %s to %s", path+"_tmp", path)
 	return os.Rename(path+"_tmp", path)
 }
 
