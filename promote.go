@@ -119,9 +119,13 @@ func isCorrectHelmChart(path, project string) bool {
       continue
     }
 
-    name := strings.Trim(strings.Split(line, ":")[1], " ")
+    val := strings.Split(line, ":")[1]
+    val = strings.ReplaceAll(val, " ", "")
+    val = strings.ReplaceAll(val, "-", "")
 
-    return name == project
+    log.Debug().Msgf("check if %s is equal to %s", val, project)
+
+    return val == project
   }
   
   return false
