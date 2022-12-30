@@ -89,7 +89,13 @@ func promoteHelmChart(path string) error {
     log.Info().Msgf("use the new tag: %s", config.NewTag)
 
     // replace the tag
-    newLine := "  tag: " + config.NewTag
+
+    // the amount of spaces before the tag key
+    // this is already a string and can be concated with the new tag
+    spaces := amountOfSpacesBeforeTag(line)
+    log.Debug().Msgf("found %d spaces before the tag key", len(spaces))
+
+    newLine := spaces + "tag: " + config.NewTag
     _, err = tmpFile.WriteString(newLine + "\n")
   }
 
@@ -97,6 +103,15 @@ func promoteHelmChart(path string) error {
   SwitchTempFileWithRealFile(yamlFile)
   
   return nil
+}
+
+func amountOfSpacesBeforeTag(line string) string {
+  for i, c := range line {
+    if c != ' ' {
+      return line[:i]
+    }
+  }
+  return ""
 }
 
 func isHelmChart(path string) bool {
