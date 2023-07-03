@@ -22,14 +22,14 @@ func CloneRepository() error {
 	auth := &http.BasicAuth{Username: username, Password: token}
 	config.RepositoryFolder = "k8s"
 
-  // check if the repository folder exists and delete it
-  if _, err := os.Stat(config.RepositoryFolder); !os.IsNotExist(err) {
-    log.Warn().Msgf("delete repository folder because it already exists")
-    err = os.RemoveAll(config.RepositoryFolder)
-    if err != nil {
-      log.Panic().Err(err).Msgf("could not delete repository folder")
-    }
-  }
+	// check if the repository folder exists and delete it
+	if _, err := os.Stat(config.RepositoryFolder); !os.IsNotExist(err) {
+		log.Warn().Msgf("delete repository folder because it already exists")
+		err = os.RemoveAll(config.RepositoryFolder)
+		if err != nil {
+			log.Panic().Err(err).Msgf("could not delete repository folder")
+		}
+	}
 
 	repository, err = git.PlainClone(config.RepositoryFolder, false, &git.CloneOptions{
 		URL:      url,
@@ -42,7 +42,46 @@ func CloneRepository() error {
 		return err
 	}
 
+	commits, err := repository.CommitObjects()
+	if err != nil {
+		log.Panic().Err(err).Msgf("can not get the commits")
+		return err
+	}
+
+	pipelineStart := PipelineStart()
+	err = commits.ForEach(func(commit *object.Commit) error {
+		// get timestamp of commit
+		timestamp := commit.Committer.When
+
+		if timestamp.After(pipelineStart) {
+			return fmt.Errorf("commit %s is newer than pipeline start, fail", commit.Hash.String())
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		log.Panic().Err(err).Msgf("error while checking commits")
+		return err
+	}
+
+	log.Info().Msgf("have not found a commit that is newer than the pipeline start, continue")
+
 	return nil
+}
+
+func PipelineStart() time.Time {
+	startString := os.Getenv("PIPELINE_START")
+
+	// format as RFC3339
+	start, err := time.Parse(time.RFC3339, startString)
+
+	if err != nil {
+		return time.Time{}
+	}
+
+	log.Info().Msgf("pipeline start: %s", start.String())
+	return start
 }
 
 func PushEnv() error {
