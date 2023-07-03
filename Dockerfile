@@ -1,21 +1,17 @@
-FROM golang:1.20-bookworm as builder
-
+FROM golang:1.20 as builder
 WORKDIR /app
 
 COPY go.mod .
 COPY go.sum .
 
 RUN go mod download
-
 COPY . .
+RUN go build -o ./bin/promoter .
 
-RUN go build .
 
+FROM debian:bookworm-slim
+COPY --from=builder /app/bin/promoter /bin/promoter
 
-FROM alpine:3
+RUN apt update -y && apt install -y git
 
-COPY --from=builder /app/promoter /usr/local/bin/promoter
-
-RUN apk add git
-
-CMD promoter
+CMD ["/bin/promoter"]
