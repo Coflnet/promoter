@@ -99,24 +99,24 @@ func PushEnv() error {
 
 	worktree.Add(".")
 
-	_, err = worktree.Commit(fmt.Sprintf("[CI] promote %s", config.Filename), &git.CommitOptions{
-		All: true,
-		Committer: &object.Signature{
-			Name:  "coflnet-bot",
-			Email: "ci@coflnet.com",
-			When:  time.Now(),
-		},
-		Author: &object.Signature{
-			Name:  "coflnet-bot",
-			Email: "ci@coflnet.com",
-			When:  time.Now(),
-		},
-	})
+	// _, err = worktree.Commit(fmt.Sprintf("[CI] promote %s", config.Filename), &git.CommitOptions{
+	// 	All: true,
+	// 	Committer: &object.Signature{
+	// 		Name:  "coflnet-bot",
+	// 		Email: "ci@coflnet.com",
+	// 		When:  time.Now(),
+	// 	},
+	// 	Author: &object.Signature{
+	// 		Name:  "coflnet-bot",
+	// 		Email: "ci@coflnet.com",
+	// 		When:  time.Now(),
+	// 	},
+	// })
 
-	if err != nil {
-		log.Panic().Err(err).Msgf("something went wrong when committing")
-		return err
-	}
+	// if err != nil {
+	// 	log.Panic().Err(err).Msgf("something went wrong when committing")
+	// 	return err
+	// }
 
 	username := config.GitUsername
 	token := config.GitToken
