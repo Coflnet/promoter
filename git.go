@@ -42,30 +42,30 @@ func CloneRepository() error {
 		return err
 	}
 
-	commits, err := repository.CommitObjects()
-	if err != nil {
-		log.Panic().Err(err).Msgf("can not get the commits")
-		return err
-	}
+	// commits, err := repository.CommitObjects()
+	// if err != nil {
+	// 	log.Panic().Err(err).Msgf("can not get the commits")
+	// 	return err
+	// }
 
-	pipelineStart := PipelineStart()
-	err = commits.ForEach(func(commit *object.Commit) error {
-		// get timestamp of commit
-		timestamp := commit.Committer.When
+	// pipelineStart := PipelineStart()
+	// err = commits.ForEach(func(commit *object.Commit) error {
+	// 	// get timestamp of commit
+	// 	timestamp := commit.Committer.When
 
-		if timestamp.After(pipelineStart) {
-			return fmt.Errorf("commit %s is newer than pipeline start, fail", commit.Hash.String())
-		}
+	// 	if timestamp.After(pipelineStart) {
+	// 		return fmt.Errorf("commit %s is newer than pipeline start, fail", commit.Hash.String())
+	// 	}
 
-		return nil
-	})
+	// 	return nil
+	// })
 
-	if err != nil {
-		log.Panic().Err(err).Msgf("error while checking commits")
-		return err
-	}
+	// if err != nil {
+	// 	log.Panic().Err(err).Msgf("error while checking commits")
+	// 	return err
+	// }
 
-	log.Info().Msgf("have not found a commit that is newer than the pipeline start, continue")
+	// log.Info().Msgf("have not found a commit that is newer than the pipeline start, continue")
 
 	return nil
 }
@@ -99,24 +99,24 @@ func PushEnv() error {
 
 	worktree.Add(".")
 
-	// _, err = worktree.Commit(fmt.Sprintf("[CI] promote %s", config.Filename), &git.CommitOptions{
-	// 	All: true,
-	// 	Committer: &object.Signature{
-	// 		Name:  "coflnet-bot",
-	// 		Email: "ci@coflnet.com",
-	// 		When:  time.Now(),
-	// 	},
-	// 	Author: &object.Signature{
-	// 		Name:  "coflnet-bot",
-	// 		Email: "ci@coflnet.com",
-	// 		When:  time.Now(),
-	// 	},
-	// })
+	_, err = worktree.Commit(fmt.Sprintf("[CI] promote %s", config.Filename), &git.CommitOptions{
+		All: true,
+		Committer: &object.Signature{
+			Name:  "coflnet-bot",
+			Email: "ci@coflnet.com",
+			When:  time.Now(),
+		},
+		Author: &object.Signature{
+			Name:  "coflnet-bot",
+			Email: "ci@coflnet.com",
+			When:  time.Now(),
+		},
+	})
 
-	// if err != nil {
-	// 	log.Panic().Err(err).Msgf("something went wrong when committing")
-	// 	return err
-	// }
+	if err != nil {
+		log.Panic().Err(err).Msgf("something went wrong when committing")
+		return err
+	}
 
 	username := config.GitUsername
 	token := config.GitToken
