@@ -79,6 +79,17 @@ func promoteHelmChart(path string) error {
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
 		line := scanner.Text()
+
+		if strings.Contains(line, "harbor.flou.dev") {
+			parts := strings.Split(line, ":")
+			repoParts := strings.Split(parts[1], "/")
+			res := fmt.Sprintf("%s: %s/%s", parts[0], "muehlhansfl", repoParts[2])
+
+			log.Info().Msgf("found the repository line %s; replace with: %s", line, res)
+			_, err = tmpFile.WriteString(res + "\n")
+			continue
+		}
+
 		if !strings.Contains(line, "tag:") {
 			_, err = tmpFile.WriteString(line + "\n")
 			continue
@@ -207,6 +218,7 @@ func SwitchTempFileWithRealFile(path string) error {
 }
 
 func ModifyImageTagIfPossible(line string) string {
+
 	if strings.Contains(line, "repository:") {
 		parts := strings.Split(line, ":")
 		repoParts := strings.Split(parts[1], "/")
