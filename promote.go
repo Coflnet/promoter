@@ -14,23 +14,23 @@ func Promote() error {
 	path := config.RepositoryFolder
 	var promoteablePaths []string
 
-  helmPromoted := false
+	helmPromoted := false
 
 	err := filepath.Walk(path, func(path string, info os.FileInfo, _ error) error {
 
-    // already updated a helm chart
-    if helmPromoted {
-      return nil
-    }
+		// already updated a helm chart
+		if helmPromoted {
+			return nil
+		}
 
-    // check if the current directory is a helm chart
-    if isHelmChart(path) && isCorrectHelmChart(path, config.Filename) {
-      log.Info().Msgf("found the promotable helm chart %s", path)
-      helmPromoted = true
-      return promoteHelmChart(path)
-    }
+		// check if the current directory is a helm chart
+		if isHelmChart(path) && isCorrectHelmChart(path, config.Filename) {
+			log.Info().Msgf("found the promotable helm chart %s", path)
+			helmPromoted = true
+			return promoteHelmChart(path)
+		}
 
-    // check for old school update
+		// check for old school update
 		if !IsPathPromoteable(path) {
 			return nil
 		}
@@ -42,9 +42,9 @@ func Promote() error {
 		return err
 	}
 
-  if helmPromoted {
-    return nil
-  }
+	if helmPromoted {
+		return nil
+	}
 
 	if len(promoteablePaths) == 0 || len(promoteablePaths) > 1 {
 		if len(promoteablePaths) > 1 {
@@ -60,15 +60,15 @@ func Promote() error {
 
 func promoteHelmChart(path string) error {
 
-  // yaml file path
-  yamlFile := filepath.Dir(path) + "/values.yaml"
+	// yaml file path
+	yamlFile := filepath.Dir(path) + "/values.yaml"
 
-  // search the tag line
-  file, err := os.Open(yamlFile)
-  if err != nil {
-    log.Error().Err(err).Msgf("could not open file %s", path)
-    return err
-  }
+	// search the tag line
+	file, err := os.Open(yamlFile)
+	if err != nil {
+		log.Error().Err(err).Msgf("could not open file %s", path)
+		return err
+	}
 
 	tmpFile, err := CreateTempFile(yamlFile)
 	if err != nil {
@@ -76,75 +76,75 @@ func promoteHelmChart(path string) error {
 	}
 	defer tmpFile.Close()
 
-  scanner := bufio.NewScanner(file)
-  for scanner.Scan() {
-    line := scanner.Text()
-    if !strings.Contains(line, "tag:") {
-      _, err = tmpFile.WriteString(line + "\n")
-      continue
-    }
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := scanner.Text()
+		if !strings.Contains(line, "tag:") {
+			_, err = tmpFile.WriteString(line + "\n")
+			continue
+		}
 
-    // add a random number to the tag
-    log.Info().Msgf("found the tag line %s", line)
-    log.Info().Msgf("use the new tag: %s", config.NewTag)
+		// add a random number to the tag
+		log.Info().Msgf("found the tag line %s", line)
+		log.Info().Msgf("use the new tag: %s", config.NewTag)
 
-    // replace the tag
+		// replace the tag
 
-    // the amount of spaces before the tag key
-    // this is already a string and can be concated with the new tag
-    spaces := amountOfSpacesBeforeTag(line)
-    log.Debug().Msgf("found %d spaces before the tag key", len(spaces))
+		// the amount of spaces before the tag key
+		// this is already a string and can be concated with the new tag
+		spaces := amountOfSpacesBeforeTag(line)
+		log.Debug().Msgf("found %d spaces before the tag key", len(spaces))
 
-    newLine := spaces + "tag: " + config.NewTag
-    _, err = tmpFile.WriteString(newLine + "\n")
-  }
+		newLine := spaces + "tag: " + config.NewTag
+		_, err = tmpFile.WriteString(newLine + "\n")
+	}
 
-  // delete the old yaml fiel and replica it with the new one
-  SwitchTempFileWithRealFile(yamlFile)
-  
-  return nil
+	// delete the old yaml fiel and replica it with the new one
+	SwitchTempFileWithRealFile(yamlFile)
+
+	return nil
 }
 
 func amountOfSpacesBeforeTag(line string) string {
-  for i, c := range line {
-    if c != ' ' {
-      return line[:i]
-    }
-  }
-  return ""
+	for i, c := range line {
+		if c != ' ' {
+			return line[:i]
+		}
+	}
+	return ""
 }
 
 func isHelmChart(path string) bool {
-  return filepath.Base(path) == "Chart.yaml"
+	return filepath.Base(path) == "Chart.yaml"
 }
 
 func isCorrectHelmChart(path, project string) bool {
 
-  // read chart.yaml file
-  file, err := os.Open(path)
-  if err != nil {
-    log.Panic().Err(err).Msgf("could not open file %s", path)
-  }
+	// read chart.yaml file
+	file, err := os.Open(path)
+	if err != nil {
+		log.Panic().Err(err).Msgf("could not open file %s", path)
+	}
 
-  scanner := bufio.NewScanner(file)
-  for scanner.Scan() {
-    line := scanner.Text()
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := scanner.Text()
 
-    if !strings.Contains(line, "name:") {
-      continue
-    }
+		if !strings.Contains(line, "name:") {
+			continue
+		}
 
-    val := strings.Split(line, ":")[1]
-    val = strings.ReplaceAll(val, " ", "")
-    val = strings.ReplaceAll(val, "-", "")
+		val := strings.Split(line, ":")[1]
+		val = strings.ReplaceAll(val, " ", "")
+		val = strings.ReplaceAll(val, "-", "")
 
-    sanitiedProject := strings.ReplaceAll(project, "-", "")
-    sanitiedProject = strings.ReplaceAll(sanitiedProject, " ", "")
+		sanitiedProject := strings.ReplaceAll(project, "-", "")
+		sanitiedProject = strings.ReplaceAll(sanitiedProject, " ", "")
 
-    return val == sanitiedProject
-  }
-  
-  return false
+		return val == sanitiedProject
+	}
+
+	return false
 }
 
 func promoteFile(path string) error {
@@ -196,13 +196,13 @@ func CreateTempFile(path string) (*os.File, error) {
 }
 
 func SwitchTempFileWithRealFile(path string) error {
-  log.Info().Msgf("deleting file %s", path)
+	log.Info().Msgf("deleting file %s", path)
 	err := os.Remove(path)
 	if err != nil {
 		return err
 	}
 
-  log.Info().Msgf("renaming file %s to %s", path+"_tmp", path)
+	log.Info().Msgf("renaming file %s to %s", path+"_tmp", path)
 	return os.Rename(path+"_tmp", path)
 }
 
@@ -214,6 +214,11 @@ func ModifyImageTagIfPossible(line string) string {
 	if !strings.Contains(line, config.ImageName) {
 		log.Warn().Msgf("line does contain \"image:\" but not the given image %s, line: %s", config.ImageName, line)
 		return line
+	}
+
+	if strings.Contains(line, "harbor.flou.dev") {
+		line = strings.Replace(line, "harbor.flou.dev/coflnet", "muehlhansfl", -1)
+		log.Info().Msgf("replaced harbor.flou.dev/coflnet with muehlhansfl; new line: %s", line)
 	}
 
 	parts := strings.Split(line, ":")
