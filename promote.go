@@ -207,6 +207,15 @@ func SwitchTempFileWithRealFile(path string) error {
 }
 
 func ModifyImageTagIfPossible(line string) string {
+	if strings.Contains(line, "repository:") {
+		parts := strings.Split(line, ":")
+		repoParts := strings.Split(parts[1], "/")
+		res := fmt.Sprintf("%s: %s/%s", parts[0], "muehlhansfl", repoParts[2])
+
+		log.Info().Msgf("found the repository line %s; replace with: %s", line, res)
+		return res
+	}
+
 	if !strings.Contains(line, "image:") {
 		return line
 	}
@@ -214,11 +223,6 @@ func ModifyImageTagIfPossible(line string) string {
 	if !strings.Contains(line, config.ImageName) {
 		log.Warn().Msgf("line does contain \"image:\" but not the given image %s, line: %s", config.ImageName, line)
 		return line
-	}
-
-	if strings.Contains(line, "harbor.flou.dev") {
-		line = strings.Replace(line, "harbor.flou.dev/coflnet", "muehlhansfl", -1)
-		log.Info().Msgf("replaced harbor.flou.dev/coflnet with muehlhansfl; new line: %s", line)
 	}
 
 	parts := strings.Split(line, ":")
