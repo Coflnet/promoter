@@ -10,13 +10,14 @@ import (
 var config Config
 
 type Config struct {
-	GitRepository    string
-	GitUsername      string
-	GitToken         string
-	Filename         string
-	NewTag           string
-	ImageName        string
-	RepositoryFolder string
+	GitRepository     string
+	GitUsername       string
+	GitToken          string
+	Filename          string
+	NewTag            string
+	ImageName         string
+	RepositoryFolder  string
+	RepositoryFolders map[string]string
 }
 
 func Init() {

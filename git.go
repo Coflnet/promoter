@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	git "github.com/go-git/go-git/v5"
@@ -11,28 +12,45 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-var repository *git.Repository
+var repo map[string]*git.Repository
 
-func CloneRepository() error {
+func CloneRepostories() error {
+	repo = make(map[string]*git.Repository)
+	config.RepositoryFolders = make(map[string]string)
 
+	repos := strings.Split(config.GitRepository, ",")
+
+	for i, repo := range repos {
+		config.RepositoryFolders[fmt.Sprintf("dir-%d", i)] = repo
+	}
+
+	for key, url := range config.RepositoryFolders {
+		err := CloneRepository(key, url)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func CloneRepository(folder string, repositoryUrl string) error {
 	var err error
 	username := config.GitUsername
 	token := config.GitToken
-	url := config.GitRepository
 	auth := &http.BasicAuth{Username: username, Password: token}
-	config.RepositoryFolder = "k8s"
 
 	// check if the repository folder exists and delete it
-	if _, err := os.Stat(config.RepositoryFolder); !os.IsNotExist(err) {
+	if _, err := os.Stat(folder); !os.IsNotExist(err) {
 		log.Warn().Msgf("delete repository folder because it already exists")
-		err = os.RemoveAll(config.RepositoryFolder)
+		err = os.RemoveAll(folder)
 		if err != nil {
 			log.Panic().Err(err).Msgf("could not delete repository folder")
 		}
 	}
 
-	repository, err = git.PlainClone(config.RepositoryFolder, false, &git.CloneOptions{
-		URL:      url,
+	repository, err := git.PlainClone(folder, false, &git.CloneOptions{
+		URL:      repositoryUrl,
 		Auth:     auth,
 		Progress: os.Stdout,
 	})
@@ -42,30 +60,7 @@ func CloneRepository() error {
 		return err
 	}
 
-	// commits, err := repository.CommitObjects()
-	// if err != nil {
-	// 	log.Panic().Err(err).Msgf("can not get the commits")
-	// 	return err
-	// }
-
-	// pipelineStart := PipelineStart()
-	// err = commits.ForEach(func(commit *object.Commit) error {
-	// 	// get timestamp of commit
-	// 	timestamp := commit.Committer.When
-
-	// 	if timestamp.After(pipelineStart) {
-	// 		return fmt.Errorf("commit %s is newer than pipeline start, fail", commit.Hash.String())
-	// 	}
-
-	// 	return nil
-	// })
-
-	// if err != nil {
-	// 	log.Panic().Err(err).Msgf("error while checking commits")
-	// 	return err
-	// }
-
-	// log.Info().Msgf("have not found a commit that is newer than the pipeline start, continue")
+	repo[folder] = repository
 
 	return nil
 }
@@ -84,7 +79,20 @@ func PipelineStart() time.Time {
 	return start
 }
 
-func PushEnv() error {
+func PushEnvs() error {
+	for folder, _ := range config.RepositoryFolders {
+		err := PushEnv(folder)
+
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func PushEnv(folder string) error {
+	repository := repo[folder]
+
 	if repository == nil {
 		log.Panic().Msgf("the repository variable is nil")
 	}
@@ -93,6 +101,12 @@ func PushEnv() error {
 	if err != nil {
 		log.Panic().Err(err).Msgf("error when getting the worktree")
 		return err
+	}
+
+	stateChanged := stateChanged(worktree)
+	if !stateChanged {
+		log.Info().Msgf("the state has not changed")
+		return nil
 	}
 
 	worktree.Pull(&git.PullOptions{})
@@ -134,4 +148,15 @@ func PushEnv() error {
 	}
 
 	return nil
+}
+
+func stateChanged(worktree *git.Worktree) bool {
+	status, err := worktree.Status()
+
+	if err != nil {
+		log.Error().Err(err).Msgf("something went wrong when getting the status")
+		return false
+	}
+
+	return !status.IsClean()
 }

@@ -11,11 +11,26 @@ import (
 )
 
 func Promote() error {
-	path := config.RepositoryFolder
-	var promoteablePaths []string
+	paths := config.RepositoryFolders
 
+	for folder, _ := range paths {
+		promoted, err := PromotePath(folder)
+
+		if err != nil {
+			return err
+		}
+
+		if promoted {
+			break
+		}
+	}
+
+	return nil
+}
+
+func PromotePath(path string) (bool, error) {
 	helmPromoted := false
-
+	var promoteablePaths []string
 	err := filepath.Walk(path, func(path string, info os.FileInfo, _ error) error {
 
 		// already updated a helm chart
@@ -39,11 +54,11 @@ func Promote() error {
 	})
 
 	if err != nil {
-		return err
+		return false, err
 	}
 
 	if helmPromoted {
-		return nil
+		return true, nil
 	}
 
 	if len(promoteablePaths) == 0 || len(promoteablePaths) > 1 {
@@ -52,10 +67,10 @@ func Promote() error {
 				log.Warn().Msgf("found %d file %s", i, p)
 			}
 		}
-		return fmt.Errorf("the amount of promoteable paths is %d, which does not work has to be exact 1", len(promoteablePaths))
+		return false, nil
 	}
 
-	return promoteFile(promoteablePaths[0])
+	return true, promoteFile(promoteablePaths[0])
 }
 
 func promoteHelmChart(path string) error {
