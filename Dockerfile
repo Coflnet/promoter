@@ -6,7 +6,7 @@ COPY go.sum .
 
 RUN go mod download
 COPY . .
-RUN go build -o ./bin/promoter .
+RUN GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o ./bin/promoter .
 
 
 FROM alpine:3.18
