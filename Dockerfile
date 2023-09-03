@@ -1,4 +1,4 @@
-FROM golang:1.20 as builder
+FROM golang:1.21 as builder
 WORKDIR /app
 
 COPY go.mod .
@@ -9,7 +9,7 @@ COPY . .
 RUN go build -o ./bin/promoter .
 
 
-FROM debian:bookworm-slim
+FROM gcr.io/distroless/static
 COPY --from=builder /app/bin/promoter /bin/promoter
 
 RUN apt update -y && apt install -y git
