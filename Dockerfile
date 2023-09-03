@@ -9,9 +9,9 @@ COPY . .
 RUN go build -o ./bin/promoter .
 
 
-FROM gcr.io/distroless/static
+FROM alpine:3.18
 COPY --from=builder /app/bin/promoter /bin/promoter
 
-RUN apt update -y && apt install -y git
+RUN apk add git -y
 
 CMD ["/bin/promoter"]
