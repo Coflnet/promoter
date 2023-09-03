@@ -34,7 +34,7 @@ func ReadEnvVars() {
 	slog.Info(fmt.Sprintf("using username: %s", config.GitUsername))
 
 	config.GitToken = mustReadEnv("GIT_TOKEN")
-    slog.Info(fmt.Sprintf("using token: %s", config.GitToken))
+    slog.Info(fmt.Sprintf("using token: %s", config.GitToken[0:5] + "*********"))
 
 	config.Filename = mustReadEnv("FILENAME")
     slog.Info(fmt.Sprintf("using filename: %s", config.Filename))
