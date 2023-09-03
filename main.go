@@ -1,24 +1,27 @@
 package main
 
-import "github.com/rs/zerolog/log"
+import "log/slog"
 
 func main() {
 	ReadEnvVars()
 
 	err := CloneRepostories()
 	if err != nil {
-		log.Panic().Err(err).Msgf("there was problem when cloning, stop execution")
+		slog.Error("there was problem when cloning, stop execution", "err", err)
+		panic(err)
 	}
+	slog.Info("successfully cloned the repositories")
 
 	err = Promote()
 	if err != nil {
-		log.Panic().Err(err).Msgf("there was problem when promoting, stop execution")
+		slog.Error("there was problem when promoting, stop execution", "err", err)
+		panic(err)
 	}
+	slog.Info("successfully promoted the helm chart")
 
 	err = PushEnvs()
 	if err != nil {
-		log.Panic().Err(err).Msgf("there was problem when pushing, stop execution")
+		slog.Error("there was problem when pushing, stop execution", "err", err)
 	}
-
-	log.Info().Msgf("successfully promoted the helm chart")
+	slog.Info("successfully promoted the helm chart")
 }

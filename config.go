@@ -1,10 +1,11 @@
 package main
 
 import (
+	"fmt"
+	"log/slog"
 	"os"
 
 	_ "github.com/joho/godotenv/autoload"
-	"github.com/rs/zerolog/log"
 )
 
 var config Config
@@ -26,38 +27,30 @@ func Init() {
 }
 
 func ReadEnvVars() {
-	config.GitRepository = os.Getenv("GIT_REPOSITORY")
-	if config.GitRepository == "" {
-		log.Panic().Msgf("GIT_REPOSITORY env var is not set")
-	}
-	log.Info().Msgf("using git repository: %s", config.GitRepository)
+	config.GitRepository = mustReadEnv("GIT_REPOSITORY")
+	slog.Info(fmt.Sprintf("using git repository: %s", config.GitRepository))
 
-	config.GitUsername = os.Getenv("GIT_USERNAME")
-	if config.GitUsername == "" {
-		log.Panic().Msgf("GIT_USERNAME env var is not set")
-	}
-	log.Info().Msgf("using username: %s", config.GitUsername)
+	config.GitUsername = mustReadEnv("GIT_USERNAME")
+	slog.Info(fmt.Sprintf("using username: %s", config.GitUsername))
 
-	config.GitToken = os.Getenv("GIT_TOKEN")
-	if config.GitToken == "" {
-		log.Panic().Msgf("GIT_TOKEN is not set")
-	}
+	config.GitToken = mustReadEnv("GIT_TOKEN")
+    slog.Info(fmt.Sprintf("using token: %s", config.GitToken))
 
-	config.Filename = os.Getenv("FILENAME")
-	if config.Filename == "" {
-		log.Panic().Msgf("FILENAME env var is not set")
-	}
-	log.Info().Msgf("using filename: %s", config.Filename)
+	config.Filename = mustReadEnv("FILENAME")
+    slog.Info(fmt.Sprintf("using filename: %s", config.Filename))
 
-	config.NewTag = os.Getenv("NEW_TAG")
-	if config.NewTag == "" {
-		log.Panic().Msgf("NEW_TAG env var is not set")
-	}
-	log.Info().Msgf("using tag: %s", config.NewTag)
+	config.NewTag = mustReadEnv("NEW_TAG")
+    slog.Info(fmt.Sprintf("using new tag: %s", config.NewTag))
 
-	config.ImageName = os.Getenv("IMAGE_NAME")
-	if config.ImageName == "" {
-		log.Panic().Msgf("IMAGE_NAME env var is not set")
-	}
-	log.Info().Msgf("using image name: %s", config.ImageName)
+	config.ImageName = mustReadEnv("IMAGE_NAME")
+    slog.Info(fmt.Sprintf("using image name: %s", config.ImageName))
 }
+
+func mustReadEnv(key string) string {
+    value := os.Getenv(key)
+    if value == "" {
+        panic(fmt.Sprintf("env var %s is not set", key))
+    }
+    return value
+}
+

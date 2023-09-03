@@ -3,17 +3,16 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
-
-	"github.com/rs/zerolog/log"
 )
 
 func Promote() error {
 	paths := config.RepositoryFolders
 
-	for folder, _ := range paths {
+	for folder := range paths {
 		promoted, err := PromotePath(folder)
 
 		if err != nil {
@@ -39,10 +38,17 @@ func PromotePath(path string) (bool, error) {
 		}
 
 		// check if the current directory is a helm chart
-		if isHelmChart(path) && isCorrectHelmChart(path, config.Filename) {
-			log.Info().Msgf("found the promotable helm chart %s", path)
-			helmPromoted = true
-			return promoteHelmChart(path)
+		if isHelmChart(path) {
+			correctChart, err := isCorrectHelmChart(path, config.Filename)
+			if err != nil {
+				return err
+			}
+
+			if correctChart {
+				slog.Debug("found the promotable helm chart %s", path)
+				helmPromoted = true
+				return promoteHelmChart(path)
+			}
 		}
 
 		// check for old school update
@@ -64,7 +70,7 @@ func PromotePath(path string) (bool, error) {
 	if len(promoteablePaths) == 0 || len(promoteablePaths) > 1 {
 		if len(promoteablePaths) > 1 {
 			for i, p := range promoteablePaths {
-				log.Warn().Msgf("found %d file %s", i, p)
+				slog.Debug("found %d file %s", i, p)
 			}
 		}
 		return false, nil
@@ -81,7 +87,6 @@ func promoteHelmChart(path string) error {
 	// search the tag line
 	file, err := os.Open(yamlFile)
 	if err != nil {
-		log.Error().Err(err).Msgf("could not open file %s", path)
 		return err
 	}
 
@@ -100,7 +105,7 @@ func promoteHelmChart(path string) error {
 			repoParts := strings.Split(parts[1], "/")
 			res := fmt.Sprintf("%s: %s/%s", parts[0], "muehlhansfl", repoParts[2])
 
-			log.Info().Msgf("found the repository line %s; replace with: %s", line, res)
+			slog.Debug("found the repository line %s; replace with: %s", line, res)
 			_, err = tmpFile.WriteString(res + "\n")
 			continue
 		}
@@ -111,15 +116,15 @@ func promoteHelmChart(path string) error {
 		}
 
 		// add a random number to the tag
-		log.Info().Msgf("found the tag line %s", line)
-		log.Info().Msgf("use the new tag: %s", config.NewTag)
+		slog.Debug(fmt.Sprintf("found the tag line %s", line))
+		slog.Debug(fmt.Sprintf("use the new tag: %s", config.NewTag))
 
 		// replace the tag
 
 		// the amount of spaces before the tag key
 		// this is already a string and can be concated with the new tag
 		spaces := amountOfSpacesBeforeTag(line)
-		log.Debug().Msgf("found %d spaces before the tag key", len(spaces))
+		slog.Debug(fmt.Sprintf("found %d spaces before the tag key", len(spaces)))
 
 		newLine := spaces + "tag: " + config.NewTag
 		_, err = tmpFile.WriteString(newLine + "\n")
@@ -144,12 +149,12 @@ func isHelmChart(path string) bool {
 	return filepath.Base(path) == "Chart.yaml"
 }
 
-func isCorrectHelmChart(path, project string) bool {
+func isCorrectHelmChart(path, project string) (bool, error) {
 
 	// read chart.yaml file
 	file, err := os.Open(path)
 	if err != nil {
-		log.Panic().Err(err).Msgf("could not open file %s", path)
+		return true, err
 	}
 
 	scanner := bufio.NewScanner(file)
@@ -167,14 +172,14 @@ func isCorrectHelmChart(path, project string) bool {
 		sanitiedProject := strings.ReplaceAll(project, "-", "")
 		sanitiedProject = strings.ReplaceAll(sanitiedProject, " ", "")
 
-		return val == sanitiedProject
+		return val == sanitiedProject, nil
 	}
 
-	return false
+	return false, nil
 }
 
 func promoteFile(path string) error {
-	log.Info().Msgf("%s is promoteable", path)
+	slog.Debug(fmt.Sprintf("%s is promoteable", path))
 
 	tmpFile, err := CreateTempFile(path)
 	if err != nil {
@@ -205,7 +210,7 @@ func promoteFile(path string) error {
 		return err
 	}
 
-	log.Info().Msgf("%s was promoted", path)
+	slog.Debug(fmt.Sprintf("%s was promoted", path))
 	return nil
 }
 
@@ -222,13 +227,13 @@ func CreateTempFile(path string) (*os.File, error) {
 }
 
 func SwitchTempFileWithRealFile(path string) error {
-	log.Info().Msgf("deleting file %s", path)
+	slog.Debug("deleting file", "file", path)
 	err := os.Remove(path)
 	if err != nil {
 		return err
 	}
 
-	log.Info().Msgf("renaming file %s to %s", path+"_tmp", path)
+	slog.Debug(fmt.Sprintf("renaming file %s to %s", path+"_tmp", path))
 	return os.Rename(path+"_tmp", path)
 }
 
@@ -239,7 +244,7 @@ func ModifyImageTagIfPossible(line string) string {
 		repoParts := strings.Split(parts[1], "/")
 		res := fmt.Sprintf("%s: %s/%s", parts[0], "muehlhansfl", repoParts[2])
 
-		log.Info().Msgf("found the repository line %s; replace with: %s", line, res)
+		slog.Debug(fmt.Sprintf("found the repository line %s; replace with: %s", line, res))
 		return res
 	}
 
@@ -248,7 +253,7 @@ func ModifyImageTagIfPossible(line string) string {
 	}
 
 	if !strings.Contains(line, config.ImageName) {
-		log.Warn().Msgf("line does contain \"image:\" but not the given image %s, line: %s", config.ImageName, line)
+		slog.Warn(fmt.Sprintf("line does contain \"image:\" but not the given image %s, line: %s", config.ImageName, line))
 		return line
 	}
 
