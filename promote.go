@@ -11,6 +11,7 @@ import (
 
 func Promote() error {
 	paths := config.RepositoryFolders
+	somethingPromoted := false
 
 	for folder := range paths {
 		promoted, err := PromotePath(folder)
@@ -20,8 +21,13 @@ func Promote() error {
 		}
 
 		if promoted {
+			somethingPromoted = true
 			break
 		}
+	}
+
+	if !somethingPromoted {
+		return fmt.Errorf("nothing was promoted")
 	}
 
 	return nil
