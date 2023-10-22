@@ -34,23 +34,22 @@ func ReadEnvVars() {
 	slog.Info(fmt.Sprintf("using username: %s", config.GitUsername))
 
 	config.GitToken = mustReadEnv("GIT_TOKEN")
-    slog.Info(fmt.Sprintf("using token: %s", config.GitToken[0:5] + "*********"))
+	slog.Info(fmt.Sprintf("using token: %s", config.GitToken[0:5]+"*********"))
 
 	config.Filename = mustReadEnv("FILENAME")
-    slog.Info(fmt.Sprintf("using filename: %s", config.Filename))
+	slog.Info(fmt.Sprintf("using filename: %s", config.Filename))
 
 	config.NewTag = mustReadEnv("NEW_TAG")
-    slog.Info(fmt.Sprintf("using new tag: %s", config.NewTag))
+	slog.Info(fmt.Sprintf("using new tag: %s", config.NewTag))
 
 	config.ImageName = mustReadEnv("IMAGE_NAME")
-    slog.Info(fmt.Sprintf("using image name: %s", config.ImageName))
+	slog.Info(fmt.Sprintf("using image name: %s", config.ImageName))
 }
 
 func mustReadEnv(key string) string {
-    value := os.Getenv(key)
-    if value == "" {
-        panic(fmt.Sprintf("env var %s is not set", key))
-    }
-    return value
+	value := os.Getenv(key)
+	if value == "" {
+		panic(fmt.Sprintf("env var %s is not set", key))
+	}
+	return value
 }
-
