@@ -1,0 +1,11 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: promoter
+  description: Updates image tags
+  tags:
+    - go
+spec:
+  type: cli
+  lifecycle: production
+  owner: flou
